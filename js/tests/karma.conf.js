@@ -8,6 +8,7 @@ const {
 } = require('./browsers')
 const babel = require('rollup-plugin-babel')
 const istanbul = require('rollup-plugin-istanbul')
+const resolve = require('rollup-plugin-node-resolve')
 
 const { env } = process
 const browserStack = env.BROWSER === 'true'
@@ -64,7 +65,8 @@ const rollupPreprocessor = {
       plugins: [
         '@babel/plugin-proposal-object-rest-spread'
       ]
-    })
+    }),
+    resolve()
   ],
   output: {
     format: 'iife',
