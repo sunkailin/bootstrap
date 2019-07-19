@@ -8,6 +8,7 @@
 import {
   jQuery as $,
   TRANSITION_END,
+  nextAnimationFrame,
   emulateTransitionEnd,
   getTransitionDurationFromElement,
   typeCheckConfig
@@ -36,22 +37,19 @@ const Event = {
 }
 
 const ClassName = {
-  FADE: 'fade',
-  HIDE: 'hide',
-  SHOW: 'show',
-  SHOWING: 'showing'
+  SHOW: 'show'
 }
 
 const DefaultType = {
-  animation: 'boolean',
   autohide: 'boolean',
-  delay: 'number'
+  delay: 'number',
+  transitionName: 'string'
 }
 
 const Default = {
-  animation: true,
   autohide: true,
-  delay: 500
+  delay: 5000,
+  transitionName: 'fade'
 }
 
 const Selector = {
@@ -96,14 +94,24 @@ class Toast {
       return
     }
 
-    if (this._config.animation) {
-      this._element.classList.add(ClassName.FADE)
+    if (this._config.transitionName) {
+      this._element.classList.add(`${this._config.transitionName}-enter`)
+      this._element.classList.add(`${this._config.transitionName}-enter-active`)
+    }
+
+    this._element.classList.add(ClassName.SHOW)
+    const transitionDuration = getTransitionDurationFromElement(this._element)
+
+    if (this._config.transitionName) {
+      nextAnimationFrame(() => {
+        this._element.classList.remove(`${this._config.transitionName}-enter`)
+        this._element.classList.add(`${this._config.transitionName}-enter-to`)
+      })
     }
 
     const complete = () => {
-      this._element.classList.remove(ClassName.SHOWING)
-      this._element.classList.add(ClassName.SHOW)
-
+      this._element.classList.remove(`${this._config.transitionName}-enter-active`)
+      this._element.classList.remove(`${this._config.transitionName}-enter-to`)
       EventHandler.trigger(this._element, Event.SHOWN)
 
       if (this._config.autohide) {
@@ -113,11 +121,7 @@ class Toast {
       }
     }
 
-    this._element.classList.remove(ClassName.HIDE)
-    this._element.classList.add(ClassName.SHOWING)
-    if (this._config.animation) {
-      const transitionDuration = getTransitionDurationFromElement(this._element)
-
+    if (transitionDuration) {
       EventHandler.one(this._element, TRANSITION_END, complete)
       emulateTransitionEnd(this._element, transitionDuration)
     } else {
@@ -136,13 +140,28 @@ class Toast {
       return
     }
 
+    if (this._config.transitionName) {
+      this._element.classList.add(`${this._config.transitionName}-leave`)
+      this._element.classList.add(`${this._config.transitionName}-leave-active`)
+    }
+
+    const transitionDuration = getTransitionDurationFromElement(this._element)
+
+    if (this._config.transitionName) {
+      nextAnimationFrame(() => {
+        this._element.classList.remove(`${this._config.transitionName}-leave`)
+        this._element.classList.add(`${this._config.transitionName}-leave-to`)
+      })
+    }
+
     const complete = () => {
-      this._element.classList.add(ClassName.HIDE)
+      this._element.classList.remove(`${this._config.transitionName}-leave-active`)
+      this._element.classList.remove(`${this._config.transitionName}-leave-to`)
+      this._element.classList.remove(ClassName.SHOW)
       EventHandler.trigger(this._element, Event.HIDDEN)
     }
 
-    this._element.classList.remove(ClassName.SHOW)
-    if (this._config.animation) {
+    if (transitionDuration) {
       const transitionDuration = getTransitionDurationFromElement(this._element)
 
       EventHandler.one(this._element, TRANSITION_END, complete)
